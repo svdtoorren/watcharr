@@ -1,0 +1,17 @@
+# Watcharr runs as a single instance and connects to an EXISTING MariaDB
+# (the same one Spotweb uses, with its own `watcharr` database/schema).
+# No db service is defined here — point DB_* at your running MariaDB.
+services:
+  watcharr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: watcharr
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: mysql+aiomysql://${DB_USER:-watcharr}:${DB_PASS:-watcharr}@${DB_HOST:-host.docker.internal}:${DB_PORT:-3306}/${DB_NAME:-watcharr}
+    extra_hosts:
+      # Lets the container reach a MariaDB running on the Docker host.
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

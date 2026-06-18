@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Node / Vite
+node_modules/
+frontend/dist/
+backend/static/
+
+# Env & local
+.env
+*.local
+
+# Editor
+.DS_Store
+
+# Worktrees & build info
+.claude/worktrees/
+frontend/tsconfig.tsbuildinfo
