@@ -1,0 +1,45 @@
+# Self-contained LOCAL TEST stack: Watcharr + a throwaway MariaDB.
+#
+# Use this only for trying Watcharr out on a local machine. It spins up its own
+# MariaDB (data kept in the `watcharr-db-data` volume) so you don't need an
+# existing database. For real use, prefer the regular docker-compose.yml and
+# point DB_* at the MariaDB that Spotweb uses.
+#
+#   docker compose -f docker-compose.test.yml up --build
+#
+# Then open http://localhost:8000 and configure Spotweb + your download client
+# under Settings.
+services:
+  db:
+    image: mariadb:11
+    container_name: watcharr-db
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: watcharr
+      MARIADB_USER: watcharr
+      MARIADB_PASSWORD: watcharr
+    volumes:
+      - watcharr-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  watcharr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: watcharr
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: mysql+aiomysql://watcharr:watcharr@db:3306/watcharr
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  watcharr-db-data:
