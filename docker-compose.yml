@@ -10,7 +10,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: mysql+aiomysql://${DB_USER:-watcharr}:${DB_PASS:-watcharr}@${DB_HOST:-host.docker.internal}:${DB_PORT:-3306}/${DB_NAME:-watcharr}
+      # Watcharr assembles DATABASE_URL from these itself (see app/config.py).
+      # Alternatively set DATABASE_URL directly to override them.
+      DB_HOST: ${DB_HOST:-host.docker.internal}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-watcharr}
+      DB_USER: ${DB_USER:-watcharr}
+      DB_PASS: ${DB_PASS:-watcharr}
     extra_hosts:
       # Lets the container reach a MariaDB running on the Docker host.
       - "host.docker.internal:host-gateway"
