@@ -14,7 +14,11 @@ from .config import settings
 
 logger = logging.getLogger("watcharr")
 
-engine = create_async_engine(settings.DATABASE_URL, pool_pre_ping=True, echo=False)
+# NB: no pool_pre_ping — SQLAlchemy's pre-ping calls aiomysql's ping() without
+# the `reconnect` arg it requires, which raises a TypeError on checkout. We rely
+# on pool_recycle to drop connections before MySQL's wait_timeout closes them;
+# SQLAlchemy also invalidates the pool automatically on a disconnect error.
+engine = create_async_engine(settings.DATABASE_URL, pool_recycle=1800, echo=False)
 
 SessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
