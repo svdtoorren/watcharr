@@ -105,12 +105,16 @@ connections under **Settings**.
 
 | var          | default              | meaning                              |
 |--------------|----------------------|--------------------------------------|
-| `DATABASE_URL` | (compose builds it) | full SQLAlchemy async MySQL URL     |
-| `DB_HOST`    | host.docker.internal | MariaDB host (compose convenience)   |
+| `DATABASE_URL` | (built from DB_*)  | full SQLAlchemy async MySQL URL; overrides DB_* |
+| `DB_HOST`    | db                   | MariaDB host                         |
 | `DB_PORT`    | 3306                 | MariaDB port                         |
 | `DB_NAME`    | watcharr             | Watcharr's own database              |
 | `DB_USER` / `DB_PASS` | watcharr    | credentials for that database        |
 | `STATIC_DIR` | /app/static          | where the built SPA is served from   |
+
+`config.py` assembles `DATABASE_URL` from the `DB_*` parts (URL-encoding
+user/pass) when no explicit `DATABASE_URL` is set — so the app reads `DB_*`
+itself, not just the compose file.
 
 Spotweb and download-client connection details are **not** env vars — they're
 configured in the UI under Settings and stored in the database.
