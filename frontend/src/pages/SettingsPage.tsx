@@ -206,6 +206,28 @@ export default function SettingsPage() {
                   Een read-only gebruiker volstaat — Watcharr leest alleen de
                   spots-tabel.
                 </div>
+
+                <div className="field-label">Spotweb URL (voor NZB-download)</div>
+                <input
+                  className="field mono"
+                  value={form.spotweb_api_url}
+                  onChange={(e) => set("spotweb_api_url", e.target.value)}
+                  placeholder="http://spotweb"
+                />
+                <div className="field-label">API-key</div>
+                <input
+                  className="field"
+                  type="password"
+                  value={form.spotweb_api_key}
+                  onChange={(e) => set("spotweb_api_key", e.target.value)}
+                  placeholder="••••••••"
+                />
+                <div className="hint-box">
+                  Ook in MariaDB-modus haalt de download-client de NZB op via
+                  Spotweb's HTTP-API
+                  (<span className="mono">…/api?t=g&amp;id=&lt;messageid&gt;&amp;apikey=…</span>).
+                  Zonder deze gegevens mislukken downloads.
+                </div>
               </>
             )}
 

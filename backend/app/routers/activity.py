@@ -6,7 +6,7 @@ from ..database import get_db
 from ..models import Activity
 from ..schemas import ActivityOut, ActivityStats
 from ..services.downloader import DownloadClient
-from ..services.spotweb import Spot
+from ..services.spotweb import Spot, SpotwebClient
 from ..services.store import get_settings_dict
 
 router = APIRouter(prefix="/activity", tags=["activity"])
@@ -61,13 +61,16 @@ async def retry_activity(
 
     settings_dict = await get_settings_dict(db)
     downloader = DownloadClient.from_settings(settings_dict)
+    # Rebuild the NZB URL from the stored messageid (spot_id) with the current
+    # Spotweb settings, so a retry uses the same fetchable URL as a fresh run.
+    nzb_url = SpotwebClient.from_settings(settings_dict)._nzb_url(item.spot_id)
     spot = Spot(
         id=item.spot_id,
         title=item.spot_title,
         category=item.spot_category,
         poster="",
         filesize=item.spot_size_bytes,
-        nzb_url=item.spot_id if "://" in item.spot_id else f"spotweb://{item.spot_id}",
+        nzb_url=nzb_url,
     )
     try:
         ok = await downloader.send(spot)

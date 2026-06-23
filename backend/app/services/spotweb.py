@@ -103,6 +103,21 @@ class SpotwebClient:
     def from_settings(cls, settings_dict: dict) -> "SpotwebClient":
         return cls(settings_dict)
 
+    def _nzb_url(self, messageid: str) -> str:
+        """Build the Spotweb newznab URL that returns the actual NZB, so a
+        download client can fetch it: ``{url}/api?t=g&id=<messageid>&apikey=…``.
+
+        This is needed in BOTH modes — even when spots are read straight from
+        MariaDB, the NZB itself is still retrieved over Spotweb's HTTP API. If no
+        Spotweb URL is configured we fall back to a ``spotweb://`` placeholder
+        that a download client can't fetch (surfaced as a failed activity)."""
+        base = (self.config.get("spotweb_api_url") or "").rstrip("/")
+        if not base:
+            return f"spotweb://{messageid}"
+        apikey = self.config.get("spotweb_api_key") or ""
+        suffix = f"&apikey={apikey}" if apikey else ""
+        return f"{base}/api?t=g&id={messageid}{suffix}"
+
     async def _fetch_api(self, limit: int = 200) -> list[Spot]:
         url = self.config.get("spotweb_api_url", "").rstrip("/")
         api_key = self.config.get("spotweb_api_key", "")
@@ -119,6 +134,15 @@ class SpotwebClient:
         raw = data.get("spots", data) if isinstance(data, dict) else data
         spots: list[Spot] = []
         for item in raw or []:
+            messageid = str(item.get("messageid") or item.get("id") or "")
+            returned = item.get("nzb_url")
+            # Prefer a directly-fetchable URL the API already gives us; otherwise
+            # build the newznab NZB URL ourselves.
+            nzb_url = (
+                str(returned)
+                if returned and str(returned).startswith(("http://", "https://"))
+                else self._nzb_url(messageid)
+            )
             spots.append(
                 Spot(
                     id=str(item.get("id") or item.get("messageid") or ""),
@@ -126,8 +150,7 @@ class SpotwebClient:
                     category=str(item.get("category", "")),
                     poster=item.get("poster", ""),
                     filesize=_to_int(item.get("filesize")),
-                    nzb_url=item.get("nzb_url")
-                    or f"{url}/?page=getnzb&messageid={item.get('messageid', '')}",
+                    nzb_url=nzb_url,
                     stamp=_to_int(item.get("stamp")),
                 )
             )
@@ -167,7 +190,7 @@ class SpotwebClient:
                     category=str(row["category"] or ""),
                     poster=row["poster"] or "",
                     filesize=_to_int(row["filesize"]),
-                    nzb_url=f"spotweb://{row['messageid']}",
+                    nzb_url=self._nzb_url(str(row["messageid"])),
                     stamp=_to_int(row["stamp"]),
                 )
             )
