@@ -2,6 +2,7 @@ import asyncio
 import logging
 from collections.abc import AsyncGenerator
 
+from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -45,6 +46,7 @@ async def init_db(retries: int = 10, delay: float = 2.0) -> None:
         try:
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
+                await _run_migrations(conn)
             return
         except OperationalError as exc:
             if attempt == retries:
@@ -59,3 +61,20 @@ async def init_db(retries: int = 10, delay: float = 2.0) -> None:
                 delay,
             )
             await asyncio.sleep(delay)
+
+
+# Columns added after a table may already exist in a deployment. create_all only
+# creates missing *tables*, never alters existing ones, so add new columns here.
+# MariaDB supports ADD COLUMN IF NOT EXISTS, making these idempotent.
+_MIGRATIONS = [
+    "ALTER TABLE watches ADD COLUMN IF NOT EXISTS category VARCHAR(200) "
+    "NOT NULL DEFAULT ''",
+]
+
+
+async def _run_migrations(conn) -> None:
+    for stmt in _MIGRATIONS:
+        try:
+            await conn.execute(text(stmt))
+        except Exception as exc:  # noqa: BLE001 — a failed migration shouldn't crash boot
+            logger.warning("Migration skipped (%s): %s", stmt, exc)

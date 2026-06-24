@@ -16,12 +16,20 @@ class DownloadClient(ABC):
     async def test_connection(self) -> dict:
         ...
 
+    @abstractmethod
+    async def list_categories(self) -> list[str]:
+        """Return the categories configured in the download client."""
+        ...
+
     @staticmethod
-    def from_settings(settings_dict: dict) -> "DownloadClient":
+    def from_settings(settings_dict: dict, category: str | None = None) -> "DownloadClient":
         client_type = settings_dict.get("download_client_type", "sabnzbd")
         host = settings_dict.get("download_client_host", "")
         port = settings_dict.get("download_client_port", "")
-        category = settings_dict.get("download_client_category", "watcharr")
+        # Category is per-watch now; fall back to a (legacy) stored setting only
+        # when no explicit category is supplied.
+        if category is None:
+            category = settings_dict.get("download_client_category", "")
         if client_type == "nzbget":
             return NZBGetClient(
                 host=host,
@@ -93,6 +101,17 @@ class SABnzbdClient(DownloadClient):
         except Exception as exc:  # noqa: BLE001
             return {"ok": False, "message": str(exc)}
 
+    async def list_categories(self) -> list[str]:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(
+                self._url,
+                params={"mode": "get_cats", "apikey": self.api_key, "output": "json"},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        # SABnzbd returns "*" for the implicit Default category — drop it.
+        return [c for c in data.get("categories", []) if c and c != "*"]
+
 
 class NZBGetClient(DownloadClient):
     def __init__(self, host: str, port: str, username: str, password: str, category: str):
@@ -143,3 +162,15 @@ class NZBGetClient(DownloadClient):
             return {"ok": True, "message": f"NZBGet {data.get('result', '?')} bereikbaar"}
         except Exception as exc:  # noqa: BLE001
             return {"ok": False, "message": str(exc)}
+
+    async def list_categories(self) -> list[str]:
+        # NZBGet exposes categories as CategoryX.Name entries in its config.
+        data = await self._rpc("config", [])
+        cats = []
+        for opt in data.get("result", []):
+            name = opt.get("Name", "")
+            if name.startswith("Category") and name.endswith(".Name"):
+                value = opt.get("Value", "")
+                if value:
+                    cats.append(value)
+        return cats

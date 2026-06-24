@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api } from "../api";
 import type { RuleField, Watch, WatchRule } from "../types";
 import { NEGATIVE_OPERATORS } from "../utils";
 
@@ -11,6 +12,7 @@ interface Props {
     rules: WatchRule[];
     interval_minutes: number;
     download_client: string;
+    category: string;
   }) => Promise<void>;
 }
 
@@ -75,8 +77,31 @@ export default function AddEditWatchModal({ initial, onClose, onSave }: Props) {
   const [intervalN, setIntervalN] = useState(initialInterval.n);
   const [intervalUnit, setIntervalUnit] = useState(initialInterval.unit);
   const [client, setClient] = useState(initial?.download_client ?? "sabnzbd");
+  const [category, setCategory] = useState(initial?.category ?? "");
+  const [categories, setCategories] = useState<string[]>([]);
+  const [catError, setCatError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Pull the live category list from the configured download client.
+    api
+      .downloadClientCategories()
+      .then((r) => {
+        setCategories(r.categories ?? []);
+        setCatError(r.error ?? null);
+      })
+      .catch((e) =>
+        setCatError(e instanceof Error ? e.message : "categorieën laden mislukt"),
+      );
+  }, []);
+
+  // Keep an already-saved category selectable even if it's no longer returned
+  // by the client (e.g. renamed there).
+  const categoryOptions =
+    category && !categories.includes(category)
+      ? [category, ...categories]
+      : categories;
 
   function updateRule(index: number, patch: Partial<WatchRule>) {
     setRules((prev) =>
@@ -119,6 +144,7 @@ export default function AddEditWatchModal({ initial, onClose, onSave }: Props) {
         rules: cleaned,
         interval_minutes: Math.max(1, intervalN) * UNIT_MINUTES[intervalUnit],
         download_client: client,
+        category,
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Opslaan mislukt");
@@ -225,11 +251,41 @@ export default function AddEditWatchModal({ initial, onClose, onSave }: Props) {
             <option value="uur">uur</option>
             <option value="dag">dagen</option>
           </select>
-          <span>→</span>
-          <select value={client} onChange={(e) => setClient(e.target.value)}>
-            <option value="sabnzbd">SABnzbd</option>
-            <option value="nzbget">NZBGet</option>
-          </select>
+        </div>
+
+        <div className="field-row">
+          <div>
+            <div className="field-label">Download client</div>
+            <select
+              className="field"
+              value={client}
+              onChange={(e) => setClient(e.target.value)}
+            >
+              <option value="sabnzbd">SABnzbd</option>
+              <option value="nzbget">NZBGet</option>
+            </select>
+          </div>
+          <div>
+            <div className="field-label">Categorie</div>
+            <select
+              className="field"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              <option value="">(standaard)</option>
+              {categoryOptions.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+            {catError && (
+              <div className="hint-box">
+                Categorieën konden niet uit de download-client worden geladen
+                ({catError}). Controleer de verbinding onder Instellingen.
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="modal-actions">

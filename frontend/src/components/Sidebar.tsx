@@ -29,17 +29,11 @@ export default function Sidebar() {
       <NavLink to="/activity" className="nav-link">
         <span className="nav-icon square" /> Activity
       </NavLink>
-      <NavLink to="/activity?view=stats" className="nav-link">
-        <span className="nav-icon circle" /> Statistieken
-      </NavLink>
 
       <div className="nav-divider" />
 
       <NavLink to="/settings" className="nav-link">
-        <span className="nav-icon square" /> Settings
-      </NavLink>
-      <NavLink to="/settings" className="nav-link">
-        <span className="nav-icon diamond" /> System
+        <span className="nav-icon square" /> Instellingen
       </NavLink>
 
       <div className="sidebar-footer">

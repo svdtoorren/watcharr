@@ -29,6 +29,7 @@ async def create_watch(payload: WatchCreate, db: AsyncSession = Depends(get_db))
         rules=[r.model_dump() for r in payload.rules],
         interval_minutes=payload.interval_minutes,
         download_client=payload.download_client,
+        category=payload.category,
     )
     db.add(watch)
     await db.commit()

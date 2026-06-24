@@ -23,6 +23,7 @@ class WatchBase(BaseModel):
     rules: list[WatchRule] = Field(default_factory=list)
     interval_minutes: int = Field(default=60, ge=1)
     download_client: str = "sabnzbd"
+    category: str = Field(default="", max_length=200)
 
 
 class WatchCreate(WatchBase):
@@ -35,6 +36,7 @@ class WatchUpdate(BaseModel):
     rules: list[WatchRule] | None = None
     interval_minutes: int | None = Field(default=None, ge=1)
     download_client: str | None = None
+    category: str | None = Field(default=None, max_length=200)
 
 
 class WatchOut(WatchBase):

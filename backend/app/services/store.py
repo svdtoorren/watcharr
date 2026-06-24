@@ -23,7 +23,6 @@ DEFAULTS: dict = {
     "download_client_api_key": "",
     "download_client_username": "",
     "download_client_password": "",
-    "download_client_category": "watcharr",
 }
 
 

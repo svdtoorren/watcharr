@@ -26,6 +26,10 @@ class Watch(Base):
     rules: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     interval_minutes: Mapped[int] = mapped_column(Integer, default=60, nullable=False)
     download_client: Mapped[str] = mapped_column(String(50), default="sabnzbd")
+    # Download-client category/folder to drop matching spots into.
+    category: Mapped[str] = mapped_column(
+        String(200), default="", server_default="", nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
     )
