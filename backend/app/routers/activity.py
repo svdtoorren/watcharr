@@ -3,7 +3,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
-from ..models import Activity
+from ..models import Activity, Watch
 from ..schemas import ActivityOut, ActivityStats
 from ..services.downloader import DownloadClient
 from ..services.spotweb import Spot, SpotwebClient
@@ -60,7 +60,11 @@ async def retry_activity(
         raise HTTPException(400, "Alleen mislukte items kunnen opnieuw")
 
     settings_dict = await get_settings_dict(db)
-    downloader = DownloadClient.from_settings(settings_dict)
+    # Use the originating watch's category (if it still exists) so a retry lands
+    # in the same download-client folder as a fresh run would.
+    watch = await db.get(Watch, item.watch_id) if item.watch_id else None
+    category = watch.category if watch else None
+    downloader = DownloadClient.from_settings(settings_dict, category=category)
     # Rebuild the NZB URL from the stored messageid (spot_id) with the current
     # Spotweb settings, so a retry uses the same fetchable URL as a fresh run.
     nzb_url = SpotwebClient.from_settings(settings_dict)._nzb_url(item.spot_id)

@@ -13,6 +13,7 @@ export interface Watch {
   rules: WatchRule[];
   interval_minutes: number;
   download_client: string;
+  category: string;
   created_at: string;
   last_run_at: string | null;
   total_sent: number;
@@ -61,7 +62,6 @@ export interface Settings {
   download_client_api_key: string;
   download_client_username: string;
   download_client_password: string;
-  download_client_category: string;
 }
 
 export interface TestResult {

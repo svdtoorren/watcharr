@@ -48,7 +48,7 @@ async def run_watch(watch_id: int) -> dict:
             await db.commit()
             return {"error": str(exc), "sent": 0, "skipped": 0, "failed": 0}
 
-        downloader = DownloadClient.from_settings(settings_dict)
+        downloader = DownloadClient.from_settings(settings_dict, category=watch.category)
 
         for spot in matches:
             if await _already_sent(db, watch.id, spot.id):

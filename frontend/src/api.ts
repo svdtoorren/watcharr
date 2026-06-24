@@ -35,6 +35,7 @@ export interface WatchPayload {
   rules: WatchRule[];
   interval_minutes: number;
   download_client: string;
+  category: string;
 }
 
 export const api = {
@@ -91,4 +92,8 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+  downloadClientCategories: () =>
+    request<{ categories: string[]; error?: string }>(
+      "/settings/download-client-categories",
+    ),
 };

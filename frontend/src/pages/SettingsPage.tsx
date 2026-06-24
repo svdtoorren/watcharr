@@ -17,7 +17,6 @@ const EMPTY: Settings = {
   download_client_api_key: "",
   download_client_username: "",
   download_client_password: "",
-  download_client_category: "watcharr",
 };
 
 export default function SettingsPage() {
@@ -333,13 +332,10 @@ export default function SettingsPage() {
               </div>
             )}
 
-            <div className="field-label">Categorie / map</div>
-            <input
-              className="field"
-              value={form.download_client_category}
-              onChange={(e) => set("download_client_category", e.target.value)}
-              placeholder="watcharr"
-            />
+            <div className="hint-box">
+              De categorie kies je per Watch — die haalt de lijst rechtstreeks
+              uit deze download-client op.
+            </div>
 
             <div className="test-row">
               <button

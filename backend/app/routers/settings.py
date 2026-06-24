@@ -53,6 +53,18 @@ async def test_download_client(payload: dict, db: AsyncSession = Depends(get_db)
     return TestResult(ok=result["ok"], message=result["message"])
 
 
+@router.get("/download-client-categories")
+async def download_client_categories(db: AsyncSession = Depends(get_db)) -> dict:
+    """Live category list from the configured download client, for the
+    per-watch category dropdown."""
+    config = await get_settings_dict(db)
+    try:
+        categories = await DownloadClient.from_settings(config).list_categories()
+        return {"categories": categories}
+    except Exception as exc:  # noqa: BLE001 — surface the reason, don't 500
+        return {"categories": [], "error": str(exc)}
+
+
 async def _merge_for_test(db: AsyncSession, payload: dict) -> dict:
     """Merge the posted (live form) values over stored ones, keeping stored
     secrets when the form still shows the mask."""
